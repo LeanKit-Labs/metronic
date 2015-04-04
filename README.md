@@ -49,9 +49,31 @@ meter.record();
 // data has `key` and `value`
 metrics.on( 'meter', function( data ) { ... } );
 
+// TELEMETRY
+
+// captures a snapshot of processor and memory utilization
+meter.recordUtilization();
+
+// setup recording utilization on an interval in milliseconds
+meter.recordUtilization( 1000 );
+
+// cancel recording utilization interval
+meter.cancelInterval();
+
 // ADAPTER
+
+// uses a metrics library to collect locally
+metrics.useLocalAdapter();
+
+// gets the local metrics report
+metrics.getReport();
+
+// custom adapter
 var myAdapter = require( 'myAdapter' );
 metrics.use( myAdapter );
+
+// remove adapter
+metrics.removeAdapters();
 ```
 
 ## Configuration
@@ -83,6 +105,27 @@ Creates a meter used to record occurrences or amounts over time.
 ### meter:record( key, [value] )
 Records a value against a key. If value is undefined, a 1 is recorded.
 
+### getReport()
+Returns metrics that have been collected locally. Only works when used with `recordMetrics`.
+
+### recordUtilization( [interval] )
+Captures and records system and process utilization of memory and processors. When an interval is provided, this will attempt to continue recording utilization at each interval.
+
+The following meters are collected each time this call is made:
+
+ * metronic.{process.title}.system.memory.total
+ * metronic.{process.title}.system.memory.used
+ * metronic.{process.title}.system.memory.free
+ * metronic.{process.title}.process.memory.physical-allocated
+ * metronic.{process.title}.process.memory.heap-total
+ * metronic.{process.title}.process.memory.heap-used
+ * metronic.{process.title}.process.cpu.load.#
+
+> Note: memory is measured in MB
+
+### cancelInterval()
+Stops recording utilization at the interval previously setup.
+
 ### removeAdapters()
 Removes all adapter subscriptions.
 
@@ -91,3 +134,6 @@ Plugs an adapter into the events directly. The adapter is expected to have the f
 
  * onTime( key, duration, units )
  * onMeter( key, value )
+
+### useLocalAdapter()
+Records metrics locally with a default adapter. Meters are recorded as histograms in the metrics report.
