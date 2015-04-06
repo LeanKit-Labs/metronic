@@ -6,11 +6,11 @@ function createAdapter() {
 	return {
 		durations: [],
 		meters: [],
-		onTime: function( key, duration, units ) {
-			this.durations.push( { key: key, duration: duration, units: units } );
+		onTime: function( key, duration, units, timestamp ) {
+			this.durations.push( { key: key, duration: duration, units: units, timestamp: timestamp } );
 		},
-		onMeter: function( key, value ) {
-			this.meters.push( { key: key, value: value } );
+		onMeter: function( key, value, timestamp ) {
+			this.meters.push( { key: key, value: value, timestamp: timestamp } );
 		}
 	};
 }
@@ -91,7 +91,6 @@ describe( 'Adapters', function() {
 		} );
 
 		after( function() {
-			console.log( metrics.getReport() );
 			metrics.removeAdapters();
 		} );
 	} );

@@ -56,12 +56,12 @@ function getKey( config, key ) {
 function recordTime( config, info ) {
 	var diff = process.hrtime( info.start );
 	var duration = convert( config, diff );
-	api.emit( 'time', { key: info.key, duration: duration, units: config.units } );
+	api.emit( 'time', { key: info.key, duration: duration, units: config.units, timestamp: Date.now() } );
 	return duration;
 }
 
 function recordMeter( key, value ) {
-	api.emit( 'meter', { key: key, value: value || 1 } );
+	api.emit( 'meter', { key: key, value: value || 1, timestamp: Date.now() } );
 	return value;
 }
 
@@ -124,10 +124,10 @@ function removeAdapters( api ) {
 function useAdapter( api, adapter ) {
 	var subscriptions = [
 		api.on( 'time', function( data ) {
-			adapter.onTime( data.key, data.duration, data.units );
+			adapter.onTime( data.key, data.duration, data.units, data.timestamp );
 		} ),
 		api.on( 'meter', function( data ) {
-			adapter.onMeter( data.key, data.value );
+			adapter.onMeter( data.key, data.value, data.timestamp );
 		} )
 	];
 	if ( !api.adpaterSubscriptions ) {

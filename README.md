@@ -29,7 +29,7 @@ timer.record();
 // resets this timer so it can be used to measure from this point
 timer.reset();
 
-// data has `key` and `duration`
+// data has `key`, `duration`, `units` and `timestamp`
 metrics.on( 'time', function( data ) { ... } );
 
 // METER
@@ -46,7 +46,7 @@ meter.record( 5 );
 // value defaults to 1
 meter.record();
 
-// data has `key` and `value`
+// data has `key`, `value` and `timestamp`
 metrics.on( 'meter', function( data ) { ... } );
 
 // TELEMETRY
@@ -132,8 +132,10 @@ Removes all adapter subscriptions.
 ### use( adapter )
 Plugs an adapter into the events directly. The adapter is expected to have the following API:
 
- * onTime( key, duration, units )
- * onMeter( key, value )
+> Note: The timestamp is milliseconds since the unix epoch in UTC (obtained from Date.now()).
+
+ * onTime( key, duration, units, timestamp )
+ * onMeter( key, value, timestamp )
 
 ### useLocalAdapter()
 Records metrics locally with a default adapter. Meters are recorded as histograms in the metrics report.
