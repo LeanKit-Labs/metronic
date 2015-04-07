@@ -2,6 +2,9 @@
 
 ## 0.1.#
 
+### 0.1.3
+Improve key namespacing to use configuration prefix, hostname and process title before user key.
+
 ### 0.1.2
 Add a timestamp to all metrics collected.
 

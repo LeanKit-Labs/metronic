@@ -1,16 +1,19 @@
 var chai = require( 'chai' );
+var os = require( 'os' );
+var hostName = os.hostname();
 chai.should();
-var metrics = require( '../../src/index' )();
 
 describe( 'Timer', function() {
-	var t1, t2;
+	var t1, t2, metrics;
 	var times1 = [];
 	var times2 = [];
 	before( function( done ) {
+		process.title = 'test';
+		metrics = require( '../../src/index' )( { prefix: 'pre' } );
 		metrics.on( 'time', function( data ) {
-			if ( data.key === 'one.one' ) {
+			if ( data.key === 'pre.' + hostName + '.test.one.one' ) {
 				times1.push( data.duration );
-			} else if ( data.key === 'one.two' ) {
+			} else if ( data.key === 'pre.' + hostName + '.test.one.two' ) {
 				times2.push( data.duration );
 			}
 		} );

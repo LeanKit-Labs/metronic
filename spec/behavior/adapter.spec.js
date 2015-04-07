@@ -1,6 +1,7 @@
 var chai = require( 'chai' );
 chai.should();
-var metrics = require( '../../src/index' )();
+var os = require( 'os' );
+var hostName = os.hostname();
 
 function createAdapter() {
 	return {
@@ -16,9 +17,10 @@ function createAdapter() {
 }
 
 describe( 'Adapters', function() {
-	var adapter, timer, meter;
+	var adapter, timer, meter, metrics;
 	before( function() {
-		process.title = 'metronic-tests';
+		process.title = 'test';
+		metrics = require( '../../src/index' )();
 		adapter = createAdapter();
 		metrics.use( adapter );
 		metrics.useLocalAdapter();
@@ -47,14 +49,26 @@ describe( 'Adapters', function() {
 		var report = metrics.getReport();
 		report.should.have.all.keys(
 			[
-				'',
-				'metronic.metronic-tests.process.cpu.load',
-				'metronic.metronic-tests.process.memory',
-				'metronic.metronic-tests.system.memory'
+				hostName,
+				hostName + '.test'
 			] );
-		report[ '' ].should.have.all.keys( [ 'one', 'two' ] );
-		report[ 'metronic.metronic-tests.process.memory' ].should.have.all.keys( [ 'heap-total', 'heap-used', 'physical-allocated' ] );
-		report[ 'metronic.metronic-tests.system.memory' ].should.have.all.keys( [ 'total', 'used', 'free' ] );
+		report[ hostName + '.test' ].should.have.all.keys(
+			[
+				'heap-allocated',
+				'heap-used',
+				'physical-allocated',
+				'core-0-load',
+				'core-1-load',
+				'core-2-load',
+				'one',
+				'two'
+			] );
+		report[ hostName ].should.have.all.keys(
+			[
+				'memory-total',
+				'memory-allocated',
+				'memory-available'
+			] );
 	} );
 
 	describe( 'after removing adapter', function() {

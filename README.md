@@ -11,7 +11,8 @@ We wanted the ability to leverage things like Graphite without introducing it as
 var metrics = require( 'metronic' )(
 	{
 		delimiter: '.',
-		units: 'ms'
+		units: 'ms',
+		prefix: '' // a custom key prefix to prepend to all keys
 	}
 );
 
@@ -21,7 +22,7 @@ var metrics = require( 'metronic' )(
 var timer = metrics.timer( 'metronic.myApp.action' );
 
 // when you want a key composed for you
-var timer = metrics.timer( [ 'metronic', var1, var2, var3 ] );
+var timer = metrics.timer( [ var1, var2, var3 ] );
 
 // creates a time measurement since the timer was started
 timer.record();
@@ -113,13 +114,13 @@ Captures and records system and process utilization of memory and processors. Wh
 
 The following meters are collected each time this call is made:
 
- * metronic.{process.title}.system.memory.total
- * metronic.{process.title}.system.memory.used
- * metronic.{process.title}.system.memory.free
- * metronic.{process.title}.process.memory.physical-allocated
- * metronic.{process.title}.process.memory.heap-total
- * metronic.{process.title}.process.memory.heap-used
- * metronic.{process.title}.process.cpu.load.#
+ * {config.prefix}.{hostName}.memory-total
+ * {config.prefix}.{hostName}.memory-used
+ * {config.prefix}.{hostName}.memory-free
+ * {config.prefix}.{hostName}.{processTitle}.memory-physical
+ * {config.prefix}.{hostName}.{processTitle}.memory-available
+ * {config.prefix}.{hostName}.{processTitle}.memory-used
+ * {config.prefix}.{hostName}.{processTitle}.core-#-load
 
 > Note: memory is measured in MB
 

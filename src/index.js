@@ -2,6 +2,8 @@ var Monologue = require( 'monologue.js' );
 var _ = require( 'lodash' );
 var metrics = require( './metricsAdapter' );
 var systemMetrics = require( './system' );
+var os = require( 'os' );
+var hostName, processTitle;
 
 var api = {};
 
@@ -23,9 +25,20 @@ function cancelInterval( api ) {
 	api.intervalCancelled = true;
 }
 
+function combineKey( config, parts ) {
+	parts.unshift( config.prefix );
+	return _.filter( parts ).join( config.delimiter );
+}
+
 function convert( config, time ) {
 	var ns = ( time[ 0 ] * 1e9 ) + time[ 1 ];
 	return ns / conversion[ config.units ];
+}
+
+function createMeter( config, key ) {
+	return {
+		record: recordMeter.bind( null, getKey( config, key ) )
+	};
 }
 
 function createTimer( config, key ) {
@@ -41,16 +54,16 @@ function createTimer( config, key ) {
 	};
 }
 
-function createMeter( config, key ) {
-	return {
-		record: recordMeter.bind( null, getKey( config, key ) )
-	};
+function getKey( config, key ) {
+	var parts = _.isString( key ) ? [ key ] : key;
+	parts.unshift( processTitle );
+	parts.unshift( hostName );
+	return combineKey( config, parts );
 }
 
-function getKey( config, key ) {
-	return _.isArray( key ) ?
-		key.join( config.delimiter ) :
-		key;
+function recordMeter( key, value ) {
+	api.emit( 'meter', { key: key, value: value || 1, timestamp: Date.now() } );
+	return value;
 }
 
 function recordTime( config, info ) {
@@ -60,44 +73,38 @@ function recordTime( config, info ) {
 	return duration;
 }
 
-function recordMeter( key, value ) {
-	api.emit( 'meter', { key: key, value: value || 1, timestamp: Date.now() } );
-	return value;
-}
-
 function recordUtilization( config, api, interval ) {
 	var utilization = systemMetrics();
-	var title = process.title;
 	var system = utilization.systemMemory;
 	var proc = utilization.processMemory;
 
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'system', 'memory', 'total' ] ),
+		combineKey( config, [ hostName, 'memory-total' ] ),
 		system.availableMB
 	);
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'system', 'memory', 'used' ] ),
+		combineKey( config, [ hostName, 'memory-allocated' ] ),
 		system.inUseMB
 	);
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'system', 'memory', 'free' ] ),
+		combineKey( config, [ hostName, 'memory-available' ] ),
 		system.freeMB
 	);
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'process', 'memory', 'physical-allocated' ] ),
+		getKey( config, 'physical-allocated' ),
 		proc.rssMB
 	);
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'process', 'memory', 'heap-total' ] ),
+		getKey( config, 'heap-allocated' ),
 		proc.heapTotalMB
 	);
 	recordMeter(
-		getKey( config, [ 'metronic', title, 'process', 'memory', 'heap-used' ] ),
+		getKey( config, 'heap-used' ),
 		proc.heapUsedMB
 	);
 	_.each( utilization.loadAverage, function( load, core ) {
 		recordMeter(
-			getKey( config, [ 'metronic', title, 'process', 'cpu', 'load', core, ] ),
+			getKey( config, 'core-' + core + '-load' ),
 			load
 		);
 	} );
@@ -143,6 +150,9 @@ function useLocalAdapter( api ) {
 
 module.exports = function( cfg ) {
 	var config = _.defaults( defaults, cfg );
+	processTitle = process.title;
+	hostName = os.hostname();
+
 	api.cancelInterval = cancelInterval.bind( null, api );
 	api.getReport = metrics.getReport;
 	api.intervalCancelled = false;
