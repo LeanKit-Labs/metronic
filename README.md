@@ -19,7 +19,7 @@ var metrics = require( 'metronic' )(
 // TIMER
 
 // when you know the key you want to use
-var timer = metrics.timer( 'metronic.myApp.action' );
+var timer = metrics.timer( 'action' );
 
 // when you want a key composed for you
 var timer = metrics.timer( [ var1, var2, var3 ] );
@@ -36,10 +36,10 @@ metrics.on( 'time', function( data ) { ... } );
 // METER
 
 // when you know the key
-var meter = metrics.meter( 'metronic.some.event' );
+var meter = metrics.meter( 'some.event' );
 
 // compose a key
-meter = metrics.meter( [ 'metronic', var4, var5 ] );
+meter = metrics.meter( [ var4, var5 ] );
 
 // creates a meter event
 meter.record( 5 );
@@ -88,6 +88,21 @@ The character to use to delimit key segments. Defaults to `.`.
  * 'us' - microseconds
  * 'ms' - milliseconds
  * 's' - seconds
+
+### prefix
+This lets you provide a custom prefix that will be added at the very beginning of every key.
+
+## Keys
+Metronic creates keys by prepending the machine name (obtained from `os.hostname()`) and the `process.title`. The `process.title` must already be set before calling the metronic function to create the instance.
+
+Example:
+```javascript
+process.title = 'myApp';
+var metronic = require( 'metronic' )();
+
+// generates 'machineName.myApp.perf' as this timer's key
+var timer = metronic.timer( 'perf' );
+```
 
 ## API
 

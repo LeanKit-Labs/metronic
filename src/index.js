@@ -36,8 +36,9 @@ function convert( config, time ) {
 }
 
 function createMeter( config, key ) {
+	var combinedKey = getKey( config, key );
 	return {
-		record: recordMeter.bind( null, getKey( config, key ) )
+		record: recordMeter.bind( null, combinedKey )
 	};
 }
 
@@ -55,7 +56,7 @@ function createTimer( config, key ) {
 }
 
 function getKey( config, key ) {
-	var parts = _.isString( key ) ? [ key ] : key;
+	var parts = _.isString( key ) ? [ key ] : key.slice();
 	parts.unshift( processTitle );
 	parts.unshift( hostName );
 	return combineKey( config, parts );

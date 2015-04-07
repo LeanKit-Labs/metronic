@@ -2,6 +2,9 @@
 
 ## 0.1.#
 
+### 0.1.4
+Bug fix - key arrays should not be mutated.
+
 ### 0.1.3
 Improve key namespacing to use configuration prefix, hostname and process title before user key.
 

@@ -1,6 +1,6 @@
 {
   "name": "metronic",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A simple metric collector that supports pluggable I/O adapters",
   "main": "src/index.js",
   "scripts": {
