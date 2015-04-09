@@ -2,6 +2,12 @@
 
 ## 0.1.#
 
+### 0.1.5
+
+ * Add support for passing namespace to meters and timers.
+ * Add instrumentation call for wrapping target asynchronous calls with a timer and counters.
+ * Add support for arbitrary time unit conversion.
+
 ### 0.1.4
 Bug fix - key arrays should not be mutated.
 

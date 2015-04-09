@@ -2,7 +2,7 @@
 Provides a simple API for collecting timing information and counters that can be integrated into different metrics/telemetry libraries.
 
 ## Rationale
-We wanted the ability to leverage things like Graphite without introducing it as a defacto dependency in all our shared libraries. This seemed like a simple way to support Graphite while leaving the door open for other solutions when Graphite isn't in use.
+We wanted the ability to leverage things like Graphite without introducing it as a concrete dependency in all our shared libraries. This seemed like a simple way to support Graphite while leaving the door open for other solutions.
 
 ## Use
 
@@ -23,6 +23,9 @@ var timer = metrics.timer( 'action' );
 
 // when you want a key composed for you
 var timer = metrics.timer( [ var1, var2, var3 ] );
+
+// when inheriting a namespace from another key
+var timer = metrics.timer( 'child', 'parent' ); // key will be 'parent.child'
 
 // creates a time measurement since the timer was started
 timer.record();
@@ -50,6 +53,23 @@ meter.record();
 // data has `key`, `value` and `timestamp`
 metrics.on( 'meter', function( data ) { ... } );
 
+// INSTRUMENTATION
+
+// instruments a promise or callback with a timer and attempt, success and failure counters.
+metrics.instrument(
+	key: [ 'one', 'two' ],
+	namespace: 'example',
+	call: function( cb ) {
+		// just return the promise
+		return someApi.call( ... );
+
+		// for a callback, pass the callback
+		someApi.call( cb );
+	},
+	success: onSuccess
+	failure: onFailure
+);
+
 // TELEMETRY
 
 // captures a snapshot of processor and memory utilization
@@ -75,6 +95,14 @@ metrics.use( myAdapter );
 
 // remove adapter
 metrics.removeAdapters();
+
+// TIME UNIT CONVERSIONS
+// convert is also available directly off the require
+// require( 'metronic' ).convert
+
+// supports conversion between supported units
+metrics.convert( 1000000, 'us', 's' ); // 1
+metrics.convert( 10, 'ms', 'ns' ); // 10000000
 ```
 
 ## Configuration
@@ -106,7 +134,23 @@ var timer = metronic.timer( 'perf' );
 
 ## API
 
-### timer( key )
+### Prefix
+By default, metronic auto-appends a prefix containing the configuration prefix, host name and process title to everything. If you need this information (to construct your own keys or namespaces), it's available via the prefix property:
+
+```javascript
+metronic.prefix; //{config.prefix}.{hostName}.{processTitle}
+```
+
+### Parent Namespaces
+It may be desirable to track metrics that roll up under a common activity. A shared namespace eliminates the default `{config.prefix}.{machineName}.{processTitle}` prefix and uses the provided `parentNamespace` instead when provided for the `timer` and `meter` calls.
+
+### meter( key, [parentNamespace] )
+Creates a meter used to record occurrences or amounts over time.
+
+### meter:record( key, [value] )
+Records a value against a key. If value is undefined, a 1 is recorded.
+
+### timer( key, [parentNamespace] )
 Creates a timer instance that can be used to record elapsed time for an activity. This instance should never be used across concurrent calls.
 
 ### timer:record()
@@ -115,11 +159,66 @@ Records a duration for the key used when the timer was created. This does _NOT_ 
 ### timer:reset()
 Resets the timer to the present. All subsequent calls to `record` will capture time elapsed since this call was made.
 
-### meter( key )
-Creates a meter used to record occurrences or amounts over time.
+### instrument( options )
+Instruments a call with timing and counters based on the hash object provided. Each metric collected appends the name of the measure after the provided key. Returns a promise wether or not the supplied `call` provides a promises by default or uses node-style callback.
 
-### meter:record( key, [value] )
-Records a value against a key. If value is undefined, a 1 is recorded.
+ * duration - the wallclock time elapsed between the invokation and resolution of the call
+ * attempted - the number of times the call has been invoked
+ * succeeded - the number of successful resolutions
+ * failed - the number of errored/rejected resolutions
+
+The options has the following properties:
+
+ * key - string or array to make up key
+ * namespace - string or array to provide custom namespace
+ * call - a wrapper around a promise or callback style function
+ * success - the success handler
+ * failure - the failure handler
+ * counters - specifies limited subset of counters to record: 'succeeded', 'failed', 'attempted'
+ * duration - set this to `false` to prevent recording the duration
+
+> Note: the `success` and `failure` callbacks should always return a value/error.
+
+```javascript
+// collect all metrics
+metrics.instrument(
+	key: [ 'one', 'two' ],
+	namespace: [ 'a', 'b' ],
+	call: function() {
+		// just return the promise
+		return someApi.call( ... );
+	},
+	success: onSuccess,
+	failure: onFailure
+);
+
+// timing only
+metrics.instrument(
+	key: [ 'one', 'two' ],
+	namespace: 'example',
+	call: function( cb ) {
+		// for a callback, pass the callback
+		someApi.call( cb );
+	},
+	success: onSuccess,
+	failure: onFailure,
+	counters: []
+);
+
+// no timer, count failures and attempts
+metrics.instrument(
+	key: [ 'one', 'two' ],
+	namespace: 'example',
+	call: function() {
+		// just return the promise
+		return someApi.call( ... );
+	},
+	success: onSuccess,
+	failure: onFailure,
+	counters: [ 'failed', 'attempted' ],
+	duration: false
+);
+```
 
 ### getReport()
 Returns metrics that have been collected locally. Only works when used with `recordMetrics`.

@@ -1,7 +1,4 @@
-var chai = require( 'chai' );
-chai.should();
-var os = require( 'os' );
-var hostName = os.hostname();
+require( '../setup' );
 
 describe( 'Meter', function() {
 	var counts = {};

@@ -1,16 +1,13 @@
-var chai = require( 'chai' );
-var os = require( 'os' );
-var hostName = os.hostname();
-chai.should();
+require( '../setup' );
 
 describe( 'Timer', function() {
-	var t1, t2, metrics;
+	var t1, t2, metrics, subscription;
 	var times1 = [];
 	var times2 = [];
 	before( function( done ) {
 		process.title = 'test';
 		metrics = require( '../../src/index' )( { prefix: 'pre' } );
-		metrics.on( 'time', function( data ) {
+		subscription = metrics.on( 'time', function( data ) {
 			if ( data.key === 'pre.' + hostName + '.test.one.one' ) {
 				times1.push( data.duration );
 			} else if ( data.key === 'pre.' + hostName + '.test.one.two' ) {
@@ -53,5 +50,9 @@ describe( 'Timer', function() {
 	it( 'should capture all recorded durations', function() {
 		times1.length.should.equal( 3 );
 		times2.length.should.equal( 3 );
+	} );
+
+	after( function() {
+		subscription.unsubscribe();
 	} );
 } );
