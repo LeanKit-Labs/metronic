@@ -251,6 +251,7 @@ Plugs an adapter into the events directly. The adapter is expected to have the f
 
  * onTime( key, duration, units, timestamp )
  * onMeter( key, value, timestamp )
+ * setConverter( converter )
 
 ### useLocalAdapter()
 Records metrics locally with a default adapter. Meters are recorded as histograms in the metrics report.

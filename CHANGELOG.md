@@ -2,6 +2,10 @@
 
 ## 0.1.#
 
+### 0.1.6
+
+ * Update adapter API to take convert method directly from metronic
+
 ### 0.1.5
 
  * Add support for passing namespace to meters and timers.

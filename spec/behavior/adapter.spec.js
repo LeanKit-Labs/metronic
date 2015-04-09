@@ -4,20 +4,25 @@ function createAdapter() {
 	return {
 		durations: [],
 		meters: [],
+		convert: undefined,
 		onTime: function( key, duration, units, timestamp ) {
 			this.durations.push( { key: key, duration: duration, units: units, timestamp: timestamp } );
 		},
 		onMeter: function( key, value, timestamp ) {
 			this.meters.push( { key: key, value: value, timestamp: timestamp } );
+		},
+		setConverter: function( convert ) {
+			this.convert = convert;
 		}
 	};
 }
 
 describe( 'Adapters', function() {
-	var adapter, timer, meter, metrics;
+	var adapter, timer, meter, metrics, convert;
 	before( function() {
 		process.title = 'test';
 		metrics = require( '../../src/index' )();
+		convert = metrics.convert;
 		adapter = createAdapter();
 		metrics.use( adapter );
 		metrics.useLocalAdapter();
@@ -40,6 +45,10 @@ describe( 'Adapters', function() {
 
 	it( 'should capture counts', function() {
 		adapter.meters.length.should.equal( 30 );
+	} );
+
+	it( 'should set converter', function() {
+		adapter.convert.should.equal( convert );
 	} );
 
 	it( 'should produce report', function() {

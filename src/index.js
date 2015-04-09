@@ -255,6 +255,9 @@ function trim( list ) {
 }
 
 function useAdapter( api, adapter ) {
+	if ( adapter.setConverter ) {
+		adapter.setConverter( convert );
+	}
 	var subscriptions = [
 		api.on( 'time', function( data ) {
 			adapter.onTime( data.key, data.duration, data.units, data.timestamp );
