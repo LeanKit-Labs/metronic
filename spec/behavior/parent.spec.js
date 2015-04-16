@@ -2,17 +2,15 @@ require( '../setup' );
 
 describe( 'Parent Namespace', function() {
 	var collected = [];
+	var subscription;
 	var metrics;
 	before( function( done ) {
 		process.title = 'test';
 		metrics = require( '../../src/index' )( { prefix: 'metronics' } );
-		metrics.once( 'meter', function( data ) {
+		subscription = metrics.on( 'metric', function( data ) {
 			collected.push( data.key );
 		} );
-		metrics.once( 'time', function( data ) {
-			collected.push( data.key );
-		} );
-		var meter = metrics.meter( 'meter', 'test' );
+		var meter = metrics.meter( 'meter', undefined, 'test' );
 		var timer = metrics.timer( 'timer', 'test' );
 		meter.record();
 		timer.record();
@@ -24,6 +22,13 @@ describe( 'Parent Namespace', function() {
 	} );
 
 	it( 'should prefer namespace over prefix', function() {
-		collected.should.eql( [ 'test.meter', 'test.timer' ] );
+		collected.should.eql( [
+			'test.meter',
+			'test.timer'
+		] );
+	} );
+
+	after( function() {
+		subscription.unsubscribe();
 	} );
 } );

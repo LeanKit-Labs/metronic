@@ -6,7 +6,7 @@ describe( 'Meter', function() {
 	before( function( done ) {
 		process.title = 'test';
 		var metrics = require( '../../src/index' )();
-		metrics.on( 'meter', function( data ) {
+		metrics.on( 'metric', function( data ) {
 			counts[ data.key ] = data.value;
 		} );
 		var meter1 = metrics.meter( 'counter.one' );

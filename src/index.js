@@ -3,6 +3,7 @@ var _ = require( 'lodash' );
 var metrics = require( './metricsAdapter' );
 var systemMetrics = require( './system' );
 var os = require( 'os' );
+var convert = require( './converter' );
 var hostName, processTitle;
 
 var conversion = {
@@ -18,23 +19,12 @@ var defaults = {
 	prefix: undefined
 };
 
-var lookup = [ 1, 1000, 1000000, 1000000000 ];
-var units = [ 'ns', 'us', 'ms', 's' ];
-
 function cancelInterval( api ) {
 	api.intervalCancelled = true;
 }
 
 function combineKey( config, parts ) {
 	return _.filter( parts ).join( config.delimiter );
-}
-
-function convert( value, sourceUnits, destinationUnits ) {
-	var sourceIndex = _.indexOf( units, sourceUnits );
-	var destinationIndex = _.indexOf( units, destinationUnits );
-	var index = Math.abs( sourceIndex - destinationIndex );
-	var factor = lookup[ index ];
-	return sourceIndex > destinationIndex ? value * factor : value / factor;
 }
 
 function convertRaw( config, time ) {
@@ -50,22 +40,30 @@ function createApi( config ) {
 	api.prefix = combineKey( config, [ config.prefix, hostName, processTitle ] );
 	api.cancelInterval = cancelInterval.bind( null, api );
 	api.convert = convert;
+	api.emitMetric = emitMetric.bind( null, api, config );
 	api.getReport = metrics.getReport;
 	api.instrument = instrument.bind( null, api, config );
 	api.intervalCancelled = false;
 	api.meter = createMeter.bind( null, api, config );
+	api.metric = createMetric.bind( null, api, config );
 	api.recordUtilization = recordUtilization.bind( null, api, config );
 	api.removeAdapters = removeAdapters.bind( null, api );
+	api.resetReport = metrics.getReport.bind( null, true );
 	api.timer = createTimer.bind( null, api, config );
 	api.useLocalAdapter = useLocalAdapter.bind( null, api );
 	api.use = useAdapter.bind( null, api );
 	return api;
 }
 
-function createMeter( api, config, key, parentNamespace ) {
+function createMeter( api, config, key, units, parentNamespace ) {
+	return createMetric( api, config, 'meter', key, units, parentNamespace );
+}
+
+function createMetric( api, config, type, key, units, parentNamespace ) {
 	var combinedKey = getKey( config, key, parentNamespace );
+	units = units || 'count';
 	return {
-		record: recordMeter.bind( null, api, combinedKey )
+		record: recordMetric.bind( null, api, type, units, combinedKey )
 	};
 }
 
@@ -82,13 +80,20 @@ function createTimer( api, config, key, parentNamespace ) {
 	};
 }
 
+function emitMetric( api, type, units, key, value, metadata ) {
+	var metric = _.merge( {
+		type: type,
+		key: key,
+		value: value,
+		units: units,
+		timestamp: Date.now()
+	}, metadata );
+	api.emit( 'metric', metric );
+}
+
 function getArguments( fn ) {
 	var fnString = fn.toString();
-	if ( /[(][^)]*[)]/.test( fnString ) ) {
-		return trim( /[(]([^)]*)[)]/.exec( fnString )[ 1 ].split( ',' ) );
-	} else {
-		return [];
-	}
+	return trim( /[(]([^)]*)[)]/.exec( fnString )[ 1 ].split( ',' ) );
 }
 
 function getKey( config, key, parentNamespace ) {
@@ -110,6 +115,7 @@ function getKey( config, key, parentNamespace ) {
 function instrument( api, config, options ) {
 	var key = _.isString( options.key ) ? [ options.key ] : options.key.slice();
 	var timerKey = key.concat( 'duration' );
+	var units = options.units || 'count';
 	var attemptKey = getKey( config, key.concat( 'attempted' ), options.namespace );
 	var successKey = getKey( config, key.concat( 'succeeded' ), options.namespace );
 	var failKey = getKey( config, key.concat( 'failed' ), options.namespace );
@@ -120,13 +126,13 @@ function instrument( api, config, options ) {
 
 	function recordDuration() {
 		if ( options.duration !== false ) {
-			recordTime( api, config, timerInfo );
+			recordTime( api, config, timerInfo, options.metadata );
 		}
 	}
 
 	function onSuccess( result ) {
 		if ( countSuccesses ) {
-			recordMeter( api, successKey, 1 );
+			recordMetric( api, 'meter', units, successKey, 1, options.metadata );
 		}
 		recordDuration();
 		if ( options.success ) {
@@ -138,7 +144,7 @@ function instrument( api, config, options ) {
 
 	function onFailure( err ) {
 		if ( countFailures ) {
-			recordMeter( api, failKey, 1 );
+			recordMetric( api, 'meter', units, failKey, 1, options.metadata );
 		}
 		recordDuration();
 
@@ -150,7 +156,7 @@ function instrument( api, config, options ) {
 	}
 
 	if ( countAttempts ) {
-		recordMeter( api, attemptKey, 1 );
+		recordMetric( api, 'meter', units, attemptKey, 1, options.metadata );
 	}
 
 	var timerInfo = {
@@ -173,58 +179,83 @@ function instrument( api, config, options ) {
 	}
 }
 
-function recordMeter( api, key, value ) {
-	api.emit( 'meter', { key: key, value: value || 1, timestamp: Date.now() } );
+function recordMetric( api, type, units, key, value, metadata ) {
+	emitMetric( api, type, units, key, value || 1, metadata );
 	return value;
 }
 
-function recordTime( api, config, info ) {
+function recordTime( api, config, info, metadata ) {
 	var diff = process.hrtime( info.start );
 	var duration = convertRaw( config, diff );
-	api.emit( 'time', { key: info.key, duration: duration, units: config.units, timestamp: Date.now() } );
+	emitMetric( api, 'time', config.units, info.key, duration, metadata );
 	return duration;
 }
 
-function recordUtilization( api, config, interval ) {
+function recordUtilization( api, config, interval, metadata ) {
+	if ( _.isObject( interval ) ) {
+		metadata = interval;
+		interval = undefined;
+	}
 	var utilization = systemMetrics();
 	var system = utilization.systemMemory;
 	var proc = utilization.processMemory;
 
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		combineKey( config, [ hostName, 'memory-total' ] ),
-		system.availableMB
+		system.availableMB,
+		metadata
 	);
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		combineKey( config, [ hostName, 'memory-allocated' ] ),
-		system.inUseMB
+		system.inUseMB,
+		metadata
 	);
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		combineKey( config, [ hostName, 'memory-available' ] ),
-		system.freeMB
+		system.freeMB,
+		metadata
 	);
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		getKey( config, 'physical-allocated' ),
-		proc.rssMB
+		proc.rssMB,
+		metadata
 	);
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		getKey( config, 'heap-allocated' ),
-		proc.heapTotalMB
+		proc.heapTotalMB,
+		metadata
 	);
-	recordMeter(
+	recordMetric(
 		api,
+		'meter',
+		'MB',
 		getKey( config, 'heap-used' ),
-		proc.heapUsedMB
+		proc.heapUsedMB,
+		metadata
 	);
 	_.each( utilization.loadAverage, function( load, core ) {
-		recordMeter(
+		recordMetric(
 			api,
+			'meter',
+			'%',
 			getKey( config, 'core-' + core + '-load' ),
-			load
+			load,
+			metadata
 		);
 	} );
 
@@ -233,7 +264,7 @@ function recordUtilization( api, config, interval ) {
 			api.intervalCancelled = false;
 		} else {
 			setTimeout( function() {
-				recordUtilization( api, config, interval );
+				recordUtilization( api, config, interval, metadata );
 			}, interval );
 		}
 	}
@@ -250,6 +281,7 @@ function removeAdapters( api ) {
 function trimString( str ) {
 	return str.trim();
 }
+
 function trim( list ) {
 	return ( list && list.length ) ? _.filter( list.map( trimString ) ) : [];
 }
@@ -259,11 +291,8 @@ function useAdapter( api, adapter ) {
 		adapter.setConverter( convert );
 	}
 	var subscriptions = [
-		api.on( 'time', function( data ) {
-			adapter.onTime( data.key, data.duration, data.units, data.timestamp );
-		} ),
-		api.on( 'meter', function( data ) {
-			adapter.onMeter( data.key, data.value, data.timestamp );
+		api.on( 'metric', function( data ) {
+			adapter.onMetric( data );
 		} )
 	];
 	if ( !api.adpaterSubscriptions ) {
@@ -281,7 +310,5 @@ function metronic( cfg ) {
 	var config = _.defaults( cfg || {}, defaults );
 	return createApi( config );
 }
-
-metronic.convert = convert;
 
 module.exports = metronic;

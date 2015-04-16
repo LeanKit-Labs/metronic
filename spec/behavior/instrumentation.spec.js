@@ -8,11 +8,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 			return metrics.instrument( {
@@ -57,11 +57,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 			return metrics.instrument( {
@@ -105,11 +105,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 			return metrics.instrument( {
@@ -152,11 +152,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 
@@ -200,11 +200,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 
@@ -247,11 +247,11 @@ describe( 'Instrumentation', function() {
 			process.title = 'test';
 			metrics = require( '../../src/index' )( { prefix: 'metronics' } );
 			subscriptions = [
-				metrics.on( 'meter', function( data ) {
+				metrics.on( 'metric', function( data ) {
+					if ( data.type === 'time' ) {
+						data.value = 1;
+					}
 					collected.push( { key: data.key, value: data.value } );
-				} ),
-				metrics.on( 'time', function( data ) {
-					collected.push( { key: data.key, value: 1 } );
 				} )
 			];
 			return metrics.instrument( {

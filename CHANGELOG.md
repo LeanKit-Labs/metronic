@@ -1,5 +1,12 @@
 ## CHANGELOG
 
+### 0.2.0
+
+ * Add API call to support the ability to emit arbitrary metric types to downstream adapters
+ * Add support for custom metric types
+ * Add support for custom metadata to attach to metric events
+ * Simplify adapter API
+
 ## 0.1.#
 
 ### 0.1.6

@@ -7,11 +7,11 @@ describe( 'Timer', function() {
 	before( function( done ) {
 		process.title = 'test';
 		metrics = require( '../../src/index' )( { prefix: 'pre' } );
-		subscription = metrics.on( 'time', function( data ) {
+		subscription = metrics.on( 'metric', function( data ) {
 			if ( data.key === 'pre.' + hostName + '.test.one.one' ) {
-				times1.push( data.duration );
+				times1.push( data.value );
 			} else if ( data.key === 'pre.' + hostName + '.test.one.two' ) {
-				times2.push( data.duration );
+				times2.push( data.value );
 			}
 		} );
 		t1 = metrics.timer( 'one.one' );

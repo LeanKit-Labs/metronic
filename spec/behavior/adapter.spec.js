@@ -3,13 +3,14 @@ require( '../setup' );
 function createAdapter() {
 	return {
 		durations: [],
-		meters: [],
+		metrics: [],
 		convert: undefined,
-		onTime: function( key, duration, units, timestamp ) {
-			this.durations.push( { key: key, duration: duration, units: units, timestamp: timestamp } );
-		},
-		onMeter: function( key, value, timestamp ) {
-			this.meters.push( { key: key, value: value, timestamp: timestamp } );
+		onMetric: function( data ) {
+			if ( data.type === 'time' ) {
+				this.durations.push( data );
+			} else {
+				this.metrics.push( data );
+			}
 		},
 		setConverter: function( convert ) {
 			this.convert = convert;
@@ -18,15 +19,14 @@ function createAdapter() {
 }
 
 describe( 'Adapters', function() {
-	var adapter, timer, meter, metrics, convert;
+	var adapter, convert, timer, meter, metrics;
 	before( function() {
 		process.title = 'test';
 		metrics = require( '../../src/index' )();
-		convert = metrics.convert;
 		adapter = createAdapter();
 		metrics.use( adapter );
 		metrics.useLocalAdapter();
-
+		convert = require( '../../src/converter' );
 		timer = metrics.timer( 'one' );
 		meter = metrics.meter( 'two' );
 		metrics.recordUtilization();
@@ -44,7 +44,7 @@ describe( 'Adapters', function() {
 	} );
 
 	it( 'should capture counts', function() {
-		adapter.meters.length.should.equal( 30 );
+		adapter.metrics.length.should.equal( 30 );
 	} );
 
 	it( 'should set converter', function() {
@@ -89,7 +89,7 @@ describe( 'Adapters', function() {
 		} );
 
 		it( 'should not increase captured counts', function() {
-			adapter.meters.length.should.equal( 30 );
+			adapter.metrics.length.should.equal( 30 );
 		} );
 	} );
 
@@ -107,7 +107,7 @@ describe( 'Adapters', function() {
 		} );
 
 		it( 'should have captured multiple intervals', function() {
-			collector.meters.length.should.equal( 10 * meters );
+			collector.metrics.length.should.equal( 10 * meters );
 		} );
 
 		after( function() {

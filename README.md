@@ -17,6 +17,7 @@ var metrics = require( 'metronic' )(
 );
 
 // TIMER
+// emits metric events of type 'time', units default to 'ms'
 
 // when you know the key you want to use
 var timer = metrics.timer( 'action' );
@@ -33,15 +34,16 @@ timer.record();
 // resets this timer so it can be used to measure from this point
 timer.reset();
 
-// data has `key`, `duration`, `units` and `timestamp`
-metrics.on( 'time', function( data ) { ... } );
+// data has `type`, `key`, `value`, `units` and `timestamp`
+metrics.on( 'metric', function( data ) { ... } );
 
 // METER
+// emits metric events of type 'meter', units default to 'count'
 
 // when you know the key
-var meter = metrics.meter( 'some.event' );
+var meter = metrics.meter( 'some.event', 'units' );
 
-// compose a key
+// compose a key (units defaults to 'count')
 meter = metrics.meter( [ var4, var5 ] );
 
 // creates a meter event
@@ -50,8 +52,24 @@ meter.record( 5 );
 // value defaults to 1
 meter.record();
 
-// data has `key`, `value` and `timestamp`
+// attach custom metadata to the metric
+meter.record( 5, undefined, { correlationId: '29387qjkhga0' } );
+
+// data has `type`, `key`, `value`, `units` and `timestamp`
 metrics.on( 'meter', function( data ) { ... } );
+
+// CUSTOM METRIC TYPES
+// provides the ability to introduce custom metric types
+
+// compose a key (units defaults to 'count')
+var metric = metrics.metric( 'customType', [ var4, var5 ], 'customUnits' );
+
+// creates a metric event
+metric.record( 5 );
+
+// attach custom metadata to the metric
+metric.record( 5, 'myUnits', { correlationId: '29387qjkhga0' } );
+
 
 // INSTRUMENTATION
 
@@ -67,8 +85,26 @@ metrics.instrument(
 		someApi.call( cb );
 	},
 	success: onSuccess
-	failure: onFailure
+	failure: onFailure,
+	metadata: {
+		correlationId: '239r8kagalz0'
+	}
 );
+
+// EMIT DIRECTLY
+// emit any metric type to all adapters
+
+// emits a time metric
+metrics.emitMetric( 'time', 'my.timer.key', 10 );
+
+// emits a time metric with custom metadata
+metrics.emitMetric( 'time', 'my.timer.key', 10, { correlationId: '12efabz931l' } );
+
+// emits a time metric
+metrics.emitMetric( 'meter', 'my.meter.key', 1 );
+
+// emits a time metric with custom metadata
+metrics.emitMetric( 'meter', 'my.meter.key', 1, { correlationId: '12efabz931l' } );
 
 // TELEMETRY
 
@@ -87,7 +123,10 @@ meter.cancelInterval();
 metrics.useLocalAdapter();
 
 // gets the local metrics report
-metrics.getReport();
+var report = metrics.getReport();
+
+// gets the local metrics report and resets everything
+var report = metrics.resetReport();
 
 // custom adapter
 var myAdapter = require( 'myAdapter' );
@@ -98,7 +137,7 @@ metrics.removeAdapters();
 
 // TIME UNIT CONVERSIONS
 // convert is also available directly off the require
-// require( 'metronic' ).convert
+// require( 'metronic/convert' );
 
 // supports conversion between supported units
 metrics.convert( 1000000, 'us', 's' ); // 1
@@ -147,17 +186,26 @@ It may be desirable to track metrics that roll up under a common activity. A sha
 ### meter( key, [parentNamespace] )
 Creates a meter used to record occurrences or amounts over time.
 
-### meter:record( key, [value] )
-Records a value against a key. If value is undefined, a 1 is recorded.
+### meter:record( [value], [metadata] )
+Records a value against a key. If value is undefined, a 1 is recorded. If metadata is present, it will be merged into the event emitted.
+
+### metric( type, key, [parentNamespace] )
+Creates a custom metric type used to record values over time.
+
+### metric:record( [value], [metadata] )
+Records a value against a key. If value is undefined, a 1 is recorded. If metadata is present, it will be merged into the event emitted.
 
 ### timer( key, [parentNamespace] )
 Creates a timer instance that can be used to record elapsed time for an activity. This instance should never be used across concurrent calls.
 
-### timer:record()
-Records a duration for the key used when the timer was created. This does _NOT_ reset the timer. Every subsequent call to `record` will capture duration from when the timer was created or the most recent `reset` call.
+### timer:record( [metadata] )
+Records a duration for the key used when the timer was created. This does _NOT_ reset the timer. Every subsequent call to `record` will capture duration from when the timer was created or the most recent `reset` call.  If metadata is present, it will be merged into the event emitted.
 
 ### timer:reset()
 Resets the timer to the present. All subsequent calls to `record` will capture time elapsed since this call was made.
+
+### emitMetric( type, units, key, [value], [metadata] )
+Emits a metric downstream to all adapters. Units can be undefined and will default to `count`. Value defaults to `1`. Metadata will be merged onto the emitted metric if provided.
 
 ### instrument( options )
 Instruments a call with timing and counters based on the hash object provided. Each metric collected appends the name of the measure after the provided key. Returns a promise wether or not the supplied `call` provides a promises by default or uses node-style callback.
@@ -176,6 +224,8 @@ The options has the following properties:
  * failure - the failure handler
  * counters - specifies limited subset of counters to record: 'succeeded', 'failed', 'attempted'
  * duration - set this to `false` to prevent recording the duration
+ * metadata - metadata to associate with everything collected during this call
+ * units - controls the units used for success, failure and attempted (defaults to 'count')
 
 > Note: the `success` and `failure` callbacks should always return a value/error.
 
@@ -249,9 +299,16 @@ Plugs an adapter into the events directly. The adapter is expected to have the f
 
 > Note: The timestamp is milliseconds since the unix epoch in UTC (obtained from Date.now()).
 
- * onTime( key, duration, units, timestamp )
- * onMeter( key, value, timestamp )
+ * onMetric( data )
  * setConverter( converter )
+
+The data passed to onMetric contains the following properties:
+
+ * type
+ * key
+ * timestamp
+ * value
+ * units
 
 ### useLocalAdapter()
 Records metrics locally with a default adapter. Meters are recorded as histograms in the metrics report.

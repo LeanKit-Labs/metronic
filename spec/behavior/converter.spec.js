@@ -1,5 +1,6 @@
 require( '../setup' );
-var convert = require( '../../src/index' ).convert;
+var convert = require( '../../convert' );
+console.log( convert );
 
 describe( 'Converter', function() {
 
