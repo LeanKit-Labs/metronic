@@ -1,5 +1,11 @@
 ## CHANGELOG
 
+## 0.2.X
+
+### 0.2.1
+
+ * Bug fix - emitMetric incorrectly passes config via bind call causing argument misalignmnet
+
 ### 0.2.0
 
  * Add API call to support the ability to emit arbitrary metric types to downstream adapters

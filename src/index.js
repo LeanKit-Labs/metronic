@@ -40,7 +40,7 @@ function createApi( config ) {
 	api.prefix = combineKey( config, [ config.prefix, hostName, processTitle ] );
 	api.cancelInterval = cancelInterval.bind( null, api );
 	api.convert = convert;
-	api.emitMetric = emitMetric.bind( null, api, config );
+	api.emitMetric = emitMetric.bind( null, api );
 	api.getReport = metrics.getReport;
 	api.instrument = instrument.bind( null, api, config );
 	api.intervalCancelled = false;
