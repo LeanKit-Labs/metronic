@@ -11,7 +11,8 @@ We wanted the ability to leverage things like Graphite without introducing it as
 var metrics = require( 'metronic' )(
 	{
 		delimiter: '.',
-		units: 'ms',
+		timeUnits: 'ms',
+		byteUnits: 'b',
 		prefix: '' // a custom key prefix to prepend to all keys
 	}
 );
@@ -149,12 +150,20 @@ metrics.convert( 10, 'ms', 'ns' ); // 10000000
 ### delimiter
 The character to use to delimit key segments. Defaults to `.`.
 
-### units
+### timeUnits
 
  * 'ns' - nanoseconds
  * 'us' - microseconds
  * 'ms' - milliseconds
  * 's' - seconds
+
+### byteUnits
+
+ * 'b' - bytes
+ * 'kb' - kilobytes
+ * 'mb' - megabytes
+ * 'gb' - gigabytes
+ * 'tb' - terabytes
 
 ### prefix
 This lets you provide a custom prefix that will be added at the very beginning of every key.
@@ -278,15 +287,17 @@ Captures and records system and process utilization of memory and processors. Wh
 
 The following meters are collected each time this call is made:
 
- * {config.prefix}.{hostName}.memory-total
- * {config.prefix}.{hostName}.memory-used
- * {config.prefix}.{hostName}.memory-free
- * {config.prefix}.{hostName}.{processTitle}.memory-physical
- * {config.prefix}.{hostName}.{processTitle}.memory-available
- * {config.prefix}.{hostName}.{processTitle}.memory-used
- * {config.prefix}.{hostName}.{processTitle}.core-#-load
+| Key | Name |
+|-----|------|
+| {config.prefix}.{hostName}.memory-total | SYSTEM_MEMORY_TOTAL |
+| {config.prefix}.{hostName}.memory-used | SYSTEM_MEMORY_USED |
+| {config.prefix}.{hostName}.memory-free | SYSTEM_MEMORY_FREE |
+| {config.prefix}.{hostName}.{processTitle}.memory-physical | PROCESS_MEMORY_ALLOCATED |
+| {config.prefix}.{hostName}.{processTitle}.memory-available | PROCESS_MEMORY_AVAILABLE |
+| {config.prefix}.{hostName}.{processTitle}.memory-used | PROCESS_MEMORY_USED |
+| {config.prefix}.{hostName}.{processTitle}.core-#-load | PROCESS_CORE_#_LOAD |
 
-> Note: memory is measured in MB
+> Note: memory is measured in bytes
 
 ### cancelInterval()
 Stops recording utilization at the interval previously setup.

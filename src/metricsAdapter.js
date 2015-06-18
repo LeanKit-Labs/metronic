@@ -5,7 +5,9 @@ var convert = require( './converter' );
 
 var types = {
 	'time': 'Timer',
-	'meter': 'Histogram'
+	'meter': 'Histogram',
+	'bytes': 'Histogram',
+	'percentage': 'Histogram'
 };
 
 function createMetric( type, name ) {
@@ -29,6 +31,8 @@ function recordMetric( data ) {
 	var value = data.value;
 	if ( data.type === 'time' ) {
 		value = convert( data.value, data.units, 'ms' );
+	} else if( data.type === 'bytes' ) {
+		value = convert( data.value, data.units, 'bytes' );
 	}
 	var metric = createMetric( types[ data.type ], data.key );
 	metric.update( value );

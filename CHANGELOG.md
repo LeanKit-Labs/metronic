@@ -2,6 +2,15 @@
 
 ## 0.2.X
 
+### 0.2.3
+ * Support metric name differentiation when using the instrument call
+ * Support conversion between byte units
+ * Add name to metadata for all system utilization metrics
+ * Bug fix - missing require for when in index
+
+### 0.2.2
+ * Bug fix - converter module missing require
+
 ### 0.2.1
 
  * Bug fix - emitMetric incorrectly passes config via bind call causing argument misalignmnet

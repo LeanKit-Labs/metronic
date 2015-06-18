@@ -9,12 +9,12 @@ gulp.task( 'coverage-watch', function() {
 
 gulp.task( 'show-coverage', bg.showCoverage() );
 
-gulp.task( 'continuous-specs', function() {
+gulp.task( 'continuous-test', function() {
 	return bg.test();
 } );
 
-gulp.task( 'specs-watch', function() {
-	bg.watch( [ 'continuous-specs' ] );
+gulp.task( 'test-watch', function() {
+	bg.watch( [ 'continuous-test' ] );
 } );
 
 gulp.task( 'test-and-exit', function() {
@@ -22,5 +22,5 @@ gulp.task( 'test-and-exit', function() {
 } );
 
 gulp.task( 'default', [ 'coverage', 'coverage-watch' ], function() {} );
-gulp.task( 'specs', [ 'continuous-specs', 'specs-watch' ], function() {} );
+gulp.task( 'ci', [ 'continuous-test', 'test-watch' ], function() {} );
 gulp.task( 'test', [ 'test-and-exit' ] );
