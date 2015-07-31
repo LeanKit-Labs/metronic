@@ -19,7 +19,7 @@ function createAdapter() {
 }
 
 describe( 'Adapters', function() {
-	var adapter, convert, timer, meter, metrics;
+	var adapter, convert, timer, meter, metrics, memUsage;
 	before( function() {
 		process.title = 'test';
 		metrics = require( '../../src/index' )();
@@ -29,6 +29,7 @@ describe( 'Adapters', function() {
 		convert = require( '../../src/converter' );
 		timer = metrics.timer( 'one' );
 		meter = metrics.meter( 'two' );
+		memUsage = metrics.metric( 'bytes', 'memUsage', 'MB' );
 		metrics.recordUtilization();
 		timer.record();
 		timer.record();
@@ -37,14 +38,25 @@ describe( 'Adapters', function() {
 		meter.record();
 		meter.record();
 		metrics.recordUtilization();
+		memUsage.record( 1 );
 	} );
 
 	it( 'should capture durations', function() {
 		adapter.durations.length.should.equal( 2 );
 	} );
 
+	it( 'should capture custom metric', function() {
+		return adapter.metrics[ 30 ].should.partiallyEql( {
+			'key': hostName + '.test.memUsage' ,
+			'type': 'bytes',
+			'units': 'b',
+			'value': 1048576
+		} );
+	} );
+
+
 	it( 'should capture counts', function() {
-		adapter.metrics.length.should.equal( 30 );
+		adapter.metrics.length.should.equal( 31 );
 	} );
 
 	it( 'should set converter', function() {
@@ -62,6 +74,7 @@ describe( 'Adapters', function() {
 			[
 				'heap-allocated',
 				'heap-used',
+				'memUsage',
 				'physical-allocated',
 				'core-0-load',
 				'core-1-load',
@@ -89,7 +102,7 @@ describe( 'Adapters', function() {
 		} );
 
 		it( 'should not increase captured counts', function() {
-			adapter.metrics.length.should.equal( 30 );
+			adapter.metrics.length.should.equal( 31 );
 		} );
 	} );
 
