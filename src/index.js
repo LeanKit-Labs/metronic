@@ -204,6 +204,7 @@ function instrument( api, config, options ) {
 function recordMetric( api, config, type, units, key, value, metadata ) {
 	if( type === 'bytes' ) {
 		value = convertBytes( config, value, units );
+		units = config.byteUnits;
 	}
 	emitMetric( api, type, units, key, value || 1, metadata );
 	return value;
