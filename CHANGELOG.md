@@ -2,6 +2,9 @@
 
 ## 0.2.X
 
+### 0.2.4
+ * Bug fix - byte conversions were keeping original units instead of target units
+
 ### 0.2.3
  * Support metric name differentiation when using the instrument call
  * Support conversion between byte units

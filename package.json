@@ -1,6 +1,6 @@
 {
   "name": "metronic",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A simple metric collector that supports pluggable I/O adapters",
   "main": "src/index.js",
   "scripts": {
@@ -20,9 +20,13 @@
     {
       "name": "Alex Robson",
       "url": "http://nerdventure.io"
+    },
+    {
+      "name": "Ian Evatt",
+      "url": "http://github.com/ianevatt"
     }
   ],
-  "license": "MIT License - http://opensource.org/licenses/MIT",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/LeanKit-Labs/metronic/issues"
   },
